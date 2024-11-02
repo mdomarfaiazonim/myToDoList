@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_todo_list_withdatabase/ScreenPage.dart';
-
-import 'TempScreenPage.dart';
+import 'package:flutter_todo_list_withdatabase/DB_Helper.dart';
+import 'package:flutter_todo_list_withdatabase/DBrepo.dart';
+import 'provider_class.dart';
+import 'ScreenPage.dart';
+import 'package:provider/provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,14 +14,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ProviderClass()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: ScreenPage(),
       ),
-      home: ScreenPage(),
     );
   }
 }

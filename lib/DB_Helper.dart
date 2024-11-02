@@ -1,6 +1,9 @@
 
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite/sqflite.dart' as sql;
+
+import 'ToDo.dart';
 
 class DB_Helper{
   static final DB_Helper dbh=DB_Helper._db_helper();
@@ -32,23 +35,34 @@ class DB_Helper{
     );
   }
 
-  Future<void> insertDB(Map<String,dynamic> row) async{
+  Future<void> insertDB(TODO todo) async{
     Database db=await dbh.database;
-    await db.insert('note_table', row);
+    await db.insert('note_table', todo.toMap());
   }
 
-  Future<void> UpdateDB(Map<String,dynamic>row)async{
+  Future<void> UpdateDB(TODO todo)async{
     Database db=await dbh.database;
-    await db.update('note_table', row, where: 'id=?', whereArgs: [row['id']]);
+    await db.update('note_table', todo.toMap(), where: 'id=?', whereArgs: [todo.toMap()['id']]);
   }
 
-  Future<void> deleteDB(int id) async{
+  Future<void> deleteDB(TODO todo) async{
     Database db=await dbh.database;
-    await db.delete('note_table', where: 'id=?', whereArgs: [id]);
+    await db.delete('note_table', where: 'id=?', whereArgs: [todo.id]);
   }
 
-  Future<List<Map<String,dynamic>>> readDb() async{
+  Future<List<TODO>> readDb() async{
     Database db = await dbh.database;
-    return await db.query('note_table');
+    final mp= await db.query('note_table');
+    List<TODO>lst=[];
+
+    mp.forEach((element) {
+      lst.add(TODO(
+        id: element['id'] as int,
+        title: element['title'] as String,
+        desc: element['desc'] as String
+      ));
+    });
+
+    return lst;
   }
 }

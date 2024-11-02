@@ -1,177 +1,168 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'DBrepo.dart';
+import 'provider_class.dart';
 import 'ToDo.dart';
 
-class ScreenPage extends StatefulWidget {
-  const ScreenPage({super.key});
+class ScreenPage extends StatelessWidget {
+  ScreenPage({super.key});
 
-  @override
-  State<ScreenPage> createState() => _ScreenPageState();
-}
-
-class _ScreenPageState extends State<ScreenPage> {
-
-  final DBrepo dbr=DBrepo();
-  List<TODO> _lists=[];
-  TextEditingController _title=TextEditingController();
-  TextEditingController _desc=TextEditingController();
-
-
-  void _load() async{
-    final lists=await dbr.getlists();
-    setState(() {
-      _lists=lists;
-    });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  void _addTODO() async{
-    final Title=_title.text;
-    final Desc=_desc.text;
-    if(Title.isNotEmpty && Desc.isNotEmpty){
-      final todo=TODO(
-        title: Title,
-        desc: Desc,
-        id:_lists.length+1,
-      );
-      await dbr.insertDb(todo);
-      _title.clear();
-      _desc.clear();
-      _load();
-    }
-  }
-
-  void _delete(TODO todo) async{
-    await dbr.deleteDb(todo);
-    _load();
-  }
-  void _update(TODO todo) async{
-    await dbr.UpdateDb(todo);
-    _load();
-  }
+  final TextEditingController title = TextEditingController();
+  final TextEditingController desc = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
+    // final _lists = Provider.of<ProviderClass>(context).lists;
+
     return Scaffold(
       appBar: AppBar(
           backgroundColor: Colors.black,
           title: Row(
             children: [
-              Icon(Icons.menu,color: Colors.white),
-              SizedBox(width: 110),
-              Text('To Do List',style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold)),
+              const Icon(Icons.menu, color: Colors.white),
+              const SizedBox(width: 110),
+              const Text('To Do List', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ],
           )
       ),
       body: Container(
         color: Colors.yellow[100],
-        child: Expanded(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _title,
-                  decoration: const InputDecoration(
-                    hintText: 'Title',
-                  ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: title,
+                decoration: const InputDecoration(
+                  hintText: 'Title',
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: TextField(
-                  controller: _desc,
-                  decoration: const InputDecoration(
-                    hintText: 'Description',
-                  ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: desc,
+                decoration: const InputDecoration(
+                  hintText: 'Description',
                 ),
               ),
-              ElevatedButton(
-                onPressed: (){
-                  _addTODO();
-                },
-                child:Text("Submit",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: Colors.black))
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Provider.of<ProviderClass>(context, listen: false).addTODO(title.text, desc.text);
+                title.clear();
+                desc.clear();
+              },
+              child: const Text("Submit", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black)),
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(Colors.yellow),
               ),
-              Expanded(
-                child: ListView.separated(
-                  separatorBuilder: (context,index){
-                    return Divider();
-                  },
-                  itemCount: _lists.length,
-                  itemBuilder: (context,index){
-                    final todo=_lists[index];
-                    TextEditingController _title2=TextEditingController();
-                    TextEditingController _desc2=TextEditingController();
-                    return ListTile(
-                      tileColor: Colors.yellow[800],
-                      title: Text(todo.title,style: TextStyle(fontWeight: FontWeight.bold),),
-                      subtitle: Text(todo.desc),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          MaterialButton(
-                              onPressed: (){
-                            showDialog(
-                                context: context,
-                                builder: (BuildContext cc) {
-                                  _title2.text=todo.title;
-                                  _desc2.text=todo.desc;
-                                  return AlertDialog(
-                                    title: Text("Update or not"),
-                                    content: Column(
-                                      children: [
+            ),
+            SizedBox(height: 20),
 
-                                        TextField(
-                                          controller: _title2,
-                                          decoration: InputDecoration(
-                                              hintText: 'title'
-                                          ),
+            Expanded(
+              child: Consumer<ProviderClass>(
+                builder: (context, provider, child) {
+                  return ListView.separated(
+                    separatorBuilder: (context, index) => const Divider(color: Colors.black,),
+                    itemCount: provider.lists.length,
+                    itemBuilder: (context, index) {
+                      final todo = provider.lists[index];
+                      return ListTile(
+                        leading: Text(todo.id.toString(),style: TextStyle(fontSize: 15),),
+                        title: Text(todo.title,style: TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(todo.desc),
+                        trailing: IconButton(
+                            onPressed: (){
+                              showDialog(
+                                  context: context,
+                                  builder: (BuildContext ctx){
+                                    return AlertDialog(
+                                      title: Text('What do you want to do ?'),
+                                      actions: [
+
+                                        TextButton(onPressed: (){
+                                          Navigator.of(ctx).pop();
+                                        }, child: Text("Cancel")),
+
+                                        TextButton(
+                                            onPressed: (){
+                                              Provider.of<ProviderClass>(context, listen: false).delete(todo);
+                                              Navigator.of(ctx).pop();
+                                            },
+                                            child: Text("Delete")
                                         ),
-                                        TextField(
-                                          controller: _desc2,
-                                          decoration: InputDecoration(
-                                              hintText: 'description'
-                                          ),
-                                        ),
+
+                                        TextButton(
+                                            onPressed: (){
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (BuildContext ct){
+                                                    TextEditingController title2=TextEditingController();
+                                                    TextEditingController desc2=TextEditingController();
+                                                    title2.text=todo.title;
+                                                    desc2.text=todo.desc;
+                                                    return AlertDialog(
+                                                      title: Text("Are you sure you want to update ?"),
+                                                      actions: [
+                                                        TextField(
+                                                          controller: title2,
+                                                          decoration: const InputDecoration(
+                                                            hintText: 'Title',
+                                                          ),
+                                                        ),
+                                                        TextField(
+                                                          controller: desc2,
+                                                          decoration: const InputDecoration(
+                                                            hintText: 'Description',
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                            onPressed: (){
+                                                              // title2.text=todo.title;
+                                                              // desc2.text=todo.desc;
+                                                              Provider.of<ProviderClass>(context,listen: false).update(
+                                                                TODO(id: todo.id, title: title2.text, desc: desc2.text)
+                                                              );
+                                                              title2.clear();
+                                                              desc2.clear();
+                                                              Navigator.of(ctx).pop();
+                                                              Navigator.of(ct).pop();
+                                                            },
+                                                            child: Text("Update")),
+                                                        TextButton(
+                                                            onPressed: (){
+                                                              Navigator.of(ct).pop();
+                                                            },
+                                                            child: Text("Cancel")
+                                                        )
+                                                      ],
+                                                    );
+                                                  }
+                                              );
+                                            },
+                                            child: Text("Update")
+                                        )
                                       ],
-                                    ),
-                                    actions: [
-                                      MaterialButton(onPressed: (){
-                                        Navigator.of(cc).pop();
-                                      }, child: Text("Cancel")),
-                                      MaterialButton(onPressed: (){
-                                        setState(() {
-                                          todo.title=_title2.text;
-                                          todo.desc=_desc2.text;
-                                        });
-                                        _update(todo);
-                                        Navigator.of(cc).pop();
-                                      }, child: Text("Update"))
-                                    ],
-                                  );
-                                },
-                            );
-                          }, child: Icon(Icons.edit,color: Colors.green,)),
-                          MaterialButton(onPressed: (){
-                            _delete(_lists[index]);
-                          }, child: Icon(Icons.delete,color: Colors.red,)),
-                        ],
-                      )
-                    );
-                  },
-                ),
+                                    );
+                                  }
+                              );
+                            },
+                            icon: Icon(Icons.edit)),
+                        onTap: () {
+                          title.text = todo.title;
+                          desc.text = todo.desc;
+                        },
+                      );
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-
 }
